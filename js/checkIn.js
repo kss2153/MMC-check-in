@@ -3,8 +3,8 @@ $(function() {
   Parse.$ = jQuery;
 
   // Initialize Parse with Parse application javascript keys
-  Parse.initialize('id1456264732846282', 'key647328467329438');
-  Parse.serverURL = 'https://musical-mentors.herokuapp.com/parse';
+  Parse.initialize('APP_ID', 'JAVASCRIPT_KEY');
+  Parse.serverURL = 'SERVER_URL';
 
   // This is the transient application state, not persisted on Parse
   var AppState = Parse.Object.extend("AppState", {
