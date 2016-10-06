@@ -1,5 +1,6 @@
 # MMC-check-in
 A web application using Parse to check in to lessons as a MMC instructor
+
 It will allow our board to easily see who has actually showed up to 
 their lessons for the week, without the hassle of maintaining paper
 sign-ins.
