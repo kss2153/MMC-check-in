@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Parse JavaScript App</title>
+    <title>MMC Check-In</title>
     <link href="css/checkIn.css" media="all" rel="stylesheet" type="text/css"/>
     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
     <script src="js/underscore.js"></script>
-    <script src="http://www.parsecdn.com/js/parse-1.2.13.min.js"></script>
+    <script src="js/parseSDK.js"></script>
     <script src="js/checkIn.js"></script>
   </head>
 
@@ -17,7 +17,8 @@
 
     <div id="todoapp">
       <div class="title">
-        <h1>MMC Check-in</h1>
+        <h1>MMC Check-In</h1>
+        <h5 style="italics">Welcome to the Musical Mentors Collaborative Check-In Page for PS145</h5>
       </div>
 
       <div class="content">
@@ -73,8 +74,21 @@
           <input type="number" id="lesson-length" placeholder="Lesson Length (in minutes)" />
           <button>Sign Up</button>
           <br/><br/>
-          <a href="javascript:void(0)" id="back-login">Skip for now</a>
+          <a href="javascript:void(0)" id="back-info">Skip for now</a>
         </form>
+      </div>
+    </script>
+
+    <script type="text/template" id="checkin-template">
+      <header id="header"></header>
+      <div class="login">
+        <h2> Hey, <%= Parse.User.current().escape("firstName")%>! </h2>
+        <p id="checkout-alert"></p>
+        <a href="javascript:void(0)" id="checkin-button" class="button-red">Check In</a>
+        <br/><br/>
+        <a href="javascript:void(0)" id="back-info"></a>
+        <br/>
+        <a href="javascript:void(0)" id="back-login">Log out</a>
       </div>
     </script>
 

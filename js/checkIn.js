@@ -3,8 +3,8 @@ $(function() {
   Parse.$ = jQuery;
 
   // Initialize Parse with Parse application javascript keys
-  Parse.initialize('APP_ID', 'JAVASCRIPT_KEY');
-  Parse.serverURL = 'SERVER_URL';
+  Parse.initialize('id14562647328462821', 'key6473284673294381');
+  Parse.serverURL = 'https://musical-mentors.herokuapp.com/parse';
 
   // This is the transient application state, not persisted on Parse
   var AppState = Parse.Object.extend("AppState", {
@@ -75,7 +75,7 @@ $(function() {
   var LessonInfoView = Parse.View.extend({
     events: {
       "submit form.signup-form": "enterInfo",
-      "click #back-login": "logIn"
+      "click #skip-info": "skip"
     },
 
     el: ".content",
@@ -100,7 +100,7 @@ $(function() {
         currentUser.save(null, {
           success: function(user) {
             console.log("user saved");
-            new LogInView();
+            new CheckInView();
           },
 
           error: function(user, error) {
@@ -117,8 +117,8 @@ $(function() {
       return false;
     },
 
-    logIn: function() {
-      new LogInView();
+    skip: function() {
+      new CheckInView();
     },
 
     render: function() {
@@ -147,7 +147,7 @@ $(function() {
       
       Parse.User.logIn(username, password, {
         success: function(user) {
-          new SignUpView();
+          new CheckInView();
           self.undelegateEvents();
           delete self;
         },
@@ -173,6 +173,96 @@ $(function() {
     }
   });
 
+  var started = false;
+  var CheckInView = Parse.View.extend({
+    events: {
+      "click #back-info": "backToInfo",
+      "click #back-login": "logIn",
+      "click #checkin-button": "checkIn"
+    },
+
+    el: ".content",
+    
+    initialize: function() {
+      _.bindAll(this, "checkIn");
+      this.render();
+      this.update();
+    },
+
+    checkIn: function(e) {
+      if (started) {
+        return;
+      }
+      started = true; 
+      var self = this;
+      var currentUser = Parse.User.current();
+      var checked = currentUser.get("checkedIn");
+      var date = new Date();
+      currentUser.set("timeIn", date);
+      currentUser.set("checkedIn", !checked);
+      currentUser.save(null, {
+          success: function(user) {
+            if (checked) {
+              this.$('#checkin-button').html("Check In");
+            } else {
+              this.$('#checkin-button').html("Check Out");
+            }
+            console.log("user saved");
+            started = false;
+          },
+
+          error: function(user, error) {
+            self.$(".signup-form .error").html(_.escape(error.message)).show();
+            self.$(".signup-form button").removeAttr("disabled");
+          }
+        });
+
+    },
+
+    logIn: function() {
+      Parse.User.logOut();
+      new LogInView();
+    },
+
+    backToInfo: function() {
+      new LessonInfoView();
+    },
+
+    update: function() {
+      var currentUser = Parse.User.current();
+      if (!currentUser.get("filledInfo")) {
+        this.$('#back-info').html("Enter lesson info");
+      } else {
+        this.$('#back-info').html("Change lesson info");
+      } 
+
+      var dateNow = new Date();
+      var dateThen = currentUser.get("timeIn");
+      var lessonLength = currentUser.get("lessonLength");
+      console.log(dateNow - dateThen);
+      if ((dateNow - dateThen)/60000 > 2 * lessonLength) {
+        this.$('#checkout-alert').html("We checked you out because your lesson ended.");
+        currentUser.set("checkedIn", false);
+        currentUser.save();
+        return;
+      }
+      var checked = currentUser.get("checkedIn");
+      if (checked) {
+        this.$('#checkin-button').html("Check Out");
+      } else {
+        this.$('#checkin-button').html("Check In");
+      }
+    },
+
+    render: function() {
+      this.$el.html(_.template($("#checkin-template").html()));
+      this.delegateEvents();
+    }
+  });
+
+
+
+
   // The main view for the app
   var AppView = Parse.View.extend({
     // Instead of generating a new element, bind to the existing skeleton of
@@ -185,10 +275,10 @@ $(function() {
 
     render: function() {
       if (Parse.User.current()) {
-        Parse.User.logOut();
-        new LogInView();
+        //Parse.User.logOut();
+        new CheckInView();
       } else {
-        new SignUpView();
+        new LogInView();
       }
     }
   });
