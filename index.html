@@ -74,7 +74,7 @@
           <input type="number" id="lesson-length" placeholder="Lesson Length (in minutes)" />
           <button>Sign Up</button>
           <br/><br/>
-          <a href="javascript:void(0)" id="back-info">Skip for now</a>
+          <a href="javascript:void(0)" id="skip-info">Skip for now</a>
         </form>
       </div>
     </script>
@@ -82,14 +82,44 @@
     <script type="text/template" id="checkin-template">
       <header id="header"></header>
       <div class="login">
-        <h2> Hey, <%= Parse.User.current().escape("firstName")%>! </h2>
+        <h2 id="greeting"> Hey, <%= Parse.User.current().escape("firstName")%>! </h2>
         <p id="checkout-alert"></p>
         <a href="javascript:void(0)" id="checkin-button" class="button-red">Check In</a>
         <br/><br/>
         <a href="javascript:void(0)" id="back-info"></a>
         <br/>
+        <a href="javascript:void(0)" id="see-checkins">View check-ins</a>
+        <br/>
         <a href="javascript:void(0)" id="back-login">Log out</a>
       </div>
+    </script>
+
+    <script type="text/template" id="manage-checkIns-template">
+      <div class="section">
+
+        <header id="header"></header>
+        <h2 align="center" id="new-checkin">View Check-ins</h2>
+
+        <div id="main">
+          <ul id="todo-list">
+            <img src='images/spinner.gif' class='spinner' />
+          </ul>
+        </div>
+        <div class="login">
+          <a href="javascript:void(0)" id="back-checkins">Back to check-in</a>
+        </div>
+
+      </div>
+    </script>
+
+    <script type="text/template" id="item-template">
+      <li>
+	<div class="view">
+	  <label class="todo-content"><%= _.escape(mentorName) %> - <%= _.escape(stringTimeIn)%></label>
+          <label class="todo-content" id="timein-label"></label>
+	  <button class="todo-destroy"></button>
+	</div>
+      </li>
     </script>
 
 </body>
