@@ -23,8 +23,12 @@ function googleLoc() {
   //xhr.timeout = 4000; 
   xhr.open('POST', "https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyC1e6ucAhEkxGUIam1LyfdsXUnMjQTRe8w", false);
   xhr.send();
-  
+  if (xhr.status != 200) {
+    return false;
+  }  
+
   var response = JSON.parse(xhr.responseText);
+  
   return isInRange(response.location.lat, response.location.lng);
 }
 

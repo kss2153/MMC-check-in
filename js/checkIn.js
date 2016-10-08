@@ -96,7 +96,7 @@ $(function() {
     },
 
     backCheckIn: function() {
-      new CheckInView();
+      navCheckIn();
     },
 
     render: function() {
@@ -151,7 +151,7 @@ $(function() {
       this.$("#log-in-spinner").show();
       user.signUp(null, {
         success: function(user) {
-          new LessonInfoView();
+          navLessonInfo();
           self.undelegateEvents();
           delete self;
         },
@@ -169,7 +169,7 @@ $(function() {
     },
 
     logIn: function() {
-      new LogInView();
+      navLogIn();
     },
 
     render: function() {
@@ -206,7 +206,7 @@ $(function() {
         currentUser.save(null, {
           success: function(user) {
             console.log("user saved");
-            new CheckInView();
+            navCheckIn();
           },
 
           error: function(user, error) {
@@ -215,7 +215,7 @@ $(function() {
           }
         });
       } else {
-        new SignUpView();
+        navSignUp();
       }
       
       this.$(".signup-form button").attr("disabled", "disabled");
@@ -224,7 +224,7 @@ $(function() {
     },
 
     skip: function() {
-      new CheckInView();
+      navCheckIn();
     },
 
     render: function() {
@@ -258,9 +258,7 @@ $(function() {
       Parse.User.logIn(username, password, {
         success: function(user) {
           //spinner.style.display = "none";
-          new CheckInView();
-          self.undelegateEvents();
-          delete self;
+          navCheckIn();
         },
 
         error: function(user, error) {
@@ -279,7 +277,7 @@ $(function() {
     },
 
     signUp: function() {
-      new SignUpView();
+      navSignUp();
     },
 
     render: function() {
@@ -313,15 +311,24 @@ $(function() {
     },
 
     createCheckIn: function(e) {
+      if (!started) {
+        started = true;
+      } else {
+        return;
+      }
       var self = this;
-      addPrev();      
-      this.$(".signup-form button").attr("disabled", "disabled");
-
+      //this.$(".signup-form button").attr("disabled", "disabled");
+      addPrev();
+      started = false;
       return false;
     },
 
     back: function() {
-      new CheckInView();
+      //new CheckInView();
+      var self = this;
+      navCheckIn();
+      self.undelegateEvents();
+      delete self;
     },
 
     render: function() {
@@ -338,6 +345,7 @@ $(function() {
   }
 
   function addPrev() {
+    document.getElementById("button").disabled = true;
     var currentUser = Parse.User.current();
     var dateInput = document.getElementById("input-date");
     var dateValue = dateInput.value;
@@ -358,13 +366,14 @@ $(function() {
     newCheckIn.set("stringTimeIn", dateString2);
     newCheckIn.save(null, {
         success: function(newCheckIn) {
-          document.getElementById("button").disabled = true;
+          //document.getElementById("button").disabled = true;
           document.getElementById("check-in-saved").style.display = "inline"; 
           console.log("successfully added checkin");
           currentUser.set("currentCheckIn", newCheckIn.id);
           currentUser.save();
         },
         error: function(newCheckIn, error) {
+          document.getElementById("button").disabled = false;
           console.log(error.message);
         }
       });
@@ -392,15 +401,26 @@ $(function() {
       if (started) {
         return;
       }
+      console.log("pushed");
       started = true; 
       var self = this;
       var currentUser = Parse.User.current();
       var checked = currentUser.get("checkedIn");
+      var filledInfo = currentUser.get("filledInfo");
+
+      if(!filledInfo) {
+        this.$('#checkout-alert').html("Input your lesson information before checking in!");
+        started = false;
+        return;
+      }
+
 
       if(!checked && !googleLoc()) {
         this.$('#checkout-alert').html("Looks like you're not at PS 145. Submit a past check-in below.");
+        started = false;
         return;
       }
+
 
       var date = new Date();
       currentUser.set("timeIn", date);
@@ -445,20 +465,33 @@ $(function() {
     },
 
     prevCheckIn: function() {
-      new PrevCheckInView();
+      var self = this;
+      navPrev();
+      //new PrevCheckInView();
+      self.undelegateEvents();
+      delete self;
     },
 
     viewCheckIns: function() {
-      new CheckInListView();
+      var self = this;
+      navView();
+      self.undelegateEvents();
+      delete self;
     },
 
     logOut: function() {
+      var self = this;
       Parse.User.logOut();
-      new LogInView();
+      navLogIn();
+      self.undelegateEvents();
+      delete self;
     },
 
     backToInfo: function() {
-      new LessonInfoView();
+      var self = this;
+      navLessonInfo();
+      self.undelegateEvents();
+      delete self;
     },
 
     update: function() {
@@ -521,6 +554,29 @@ $(function() {
     });
   }
 
+  function navLessonInfo() {
+    window.location = '#info';
+  }
+
+  function navLogIn() {
+    window.location = '#log-in';
+  }
+
+  function navCheckIn() {
+    window.location = '#check-in';
+  }
+
+  function navSignUp() {
+    window.location = '#sign-up';
+  }
+
+  function navPrev() {
+    window.location = '#prev';
+  }
+
+  function navView() {
+    window.location = '#view';
+  }
 
   // The main view for the app
   var AppView = Parse.View.extend({
@@ -535,33 +591,51 @@ $(function() {
     render: function() {
       var user = Parse.User.current();
       if (user) {
-        new CheckInView();
+        navCheckIn();
       } else {
-        new LogInView();
+        navLogIn();
       }
     }
   });
 
   var AppRouter = Parse.Router.extend({
     routes: {
-      "all": "all",
-      "active": "active",
-      "completed": "completed"
+      "view": "view",
+      "prev": "prev",
+      "check-in": "checkIn",
+      "log-in" : "logIn",
+      "sign-up" : "signUp",
+      "info" : "lessonInfo"
     },
 
     initialize: function(options) {
     },
 
-    all: function() {
-      state.set({ filter: "all" });
+    lessonInfo: function() {
+      new LessonInfoView();
     },
 
-    active: function() {
-      state.set({ filter: "active" });
+    signUp: function() {
+      new SignUpView();
     },
 
-    completed: function() {
-      state.set({ filter: "completed" });
+    logIn: function() {
+      if(Parse.User.current()) {
+        Parse.User.logOut();
+      }
+      new LogInView();
+    },
+
+    view: function() {
+      new CheckInListView();
+    },
+
+    prev: function() {
+      new PrevCheckInView();
+    },
+
+    checkIn: function() {
+      new CheckInView();
     }
   });
 
