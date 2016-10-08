@@ -6,6 +6,6 @@ their lessons for the week, without the hassle of maintaining paper
 sign-ins.
 
 So far, I have completed the Parse framework as well as the
-initial login and sign up pages.
+initial login, sign up pages and check-in process.
 
-To complete: the check-in process
+To complete: enhance experience viewing check-ins, add csv list for download
