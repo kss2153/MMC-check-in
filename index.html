@@ -9,6 +9,7 @@
     <script src="js/underscore.js"></script>
     <script src="js/parseSDK.js"></script>
     <script src="js/checkIn.js"></script>
+    <script src="js/distance.js"></script>
   </head>
 
   <body>
@@ -40,6 +41,9 @@
           <input type="text" id="login-username" placeholder="Username" />
           <input type="password" id="login-password" placeholder="Password" />
           <button>Log In</button>
+          <div id="log-in-spinner" style="display:none">
+            <img src='images/spinner.gif' class='spinner' />
+          </div>
           <br/><br/>
           <a href="javascript:void(0)" id="back-signup">Haven't signed up yet?</a>
         </form>
@@ -57,6 +61,9 @@
           <input type="text" id="signup-username" placeholder="Username" />
           <input type="password" id="signup-password" placeholder="Create a Password" />
           <button>Sign Up</button>
+          <div id="log-in-spinner" style="display:none">
+            <img src='images/spinner.gif' class='spinner' />
+          </div>
           <br/><br/>
           <a href="javascript:void(0)" id="back-login">Already signed up?</a>
         </form>
@@ -72,12 +79,32 @@
           <input type="text" id="student-fullname" placeholder="Student's Full Name" />
           <input type="text" id="parent-fullname" placeholder="Student's Parent's Name" />
           <input type="number" id="lesson-length" placeholder="Lesson Length (in minutes)" />
-          <button>Sign Up</button>
+          <button>Submit</button>
           <br/><br/>
           <a href="javascript:void(0)" id="skip-info">Skip for now</a>
         </form>
       </div>
     </script>
+
+    <script type="text/template" id="prev-checkin-template">
+      <header id="header"></header>
+      <div class="login">
+        <form class="signup-form">
+          <h2>When was your lesson?</h2>
+          <div class="error" style="display:none"></div>
+          <input type="date" id="input-date" value="2016-10-07" />
+          <h2>From</h2>
+          <input type="time" id="input-time-in" value="15:00:00" />
+          <h2>To</h2>
+          <input type="time" id="input-time-out" value="16:00:00" />
+          <button id="button">Submit</button>
+          <p id="check-in-saved" style="display:none">saved.<p>
+          <br/>
+          <a href="javascript:void(0)" id="back-check-in">Back</a>
+        </form>
+      </div>
+    </script>
+
 
     <script type="text/template" id="checkin-template">
       <header id="header"></header>
@@ -86,6 +113,8 @@
         <p id="checkout-alert"></p>
         <a href="javascript:void(0)" id="checkin-button" class="button-red">Check In</a>
         <br/><br/>
+        <a href="javascript:void(0)" id="prev-checkin">Forgot to check in at PS 145?</a>
+        <br/><br/><br/>
         <a href="javascript:void(0)" id="back-info"></a>
         <br/>
         <a href="javascript:void(0)" id="see-checkins">View check-ins</a>
@@ -98,7 +127,7 @@
       <div class="section">
 
         <header id="header"></header>
-        <h2 align="center" id="new-checkin">View Check-ins</h2>
+        <h2 align="center" id="new-checkin">View Check-Ins</h2>
 
         <div id="main">
           <ul id="todo-list">

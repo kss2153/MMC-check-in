@@ -89,7 +89,7 @@ $(function() {
       this.input = this.$("#new-checkin");
       this.checkins = new CheckInList;
       this.checkins.query = new Parse.Query(CheckIn);
-      
+      this.checkins.query.descending("timeIn"); 
       this.checkins.bind('reset', this.addAll);
 
       this.checkins.fetch();
@@ -147,7 +147,8 @@ $(function() {
       user.set("lastName", lastName);
       user.set("ACL", new Parse.ACL());    
       user.set("filledInfo", false);
-
+    
+      this.$("#log-in-spinner").show();
       user.signUp(null, {
         success: function(user) {
           new LessonInfoView();
@@ -156,6 +157,7 @@ $(function() {
         },
 
         error: function(user, error) {
+          hideSpinner();
           self.$(".signup-form .error").html(_.escape(error.message)).show();
           self.$(".signup-form button").removeAttr("disabled");
         }
@@ -241,6 +243,7 @@ $(function() {
     
     initialize: function() {
       _.bindAll(this, "logIn");
+      //spinner.style.display = "none";
       this.render();
     },
 
@@ -249,14 +252,22 @@ $(function() {
       var username = this.$("#login-username").val();
       var password = this.$("#login-password").val();
       
+      //showSpinner();
+      this.$("#log-in-spinner").show();
+      //spinner.style.display = "inline";
       Parse.User.logIn(username, password, {
         success: function(user) {
+          //spinner.style.display = "none";
           new CheckInView();
           self.undelegateEvents();
           delete self;
         },
 
         error: function(user, error) {
+          hideSpinner();
+          //self.render().$el.find("#log-in-spinner").hide();
+          //this.$("#log-in-spinner").hide();
+          //spinner.style.display = "none";
           self.$(".login-form .error").html("Invalid username or password. Please try again.").show();
           self.$(".login-form button").removeAttr("disabled");
         }
@@ -277,13 +288,96 @@ $(function() {
     }
   });
 
+  function hideSpinner() {
+    var spinner = document.getElementById("log-in-spinner");
+    spinner.style.display = "none";  
+  }
+
+  function showSpinner() {
+    var spinner = document.getElementById("log-in-spinner");
+    spinner.style.visibility = "visible";
+  }
+
+  var PrevCheckInView = Parse.View.extend({
+    events: {
+      "submit form.signup-form": "createCheckIn",
+      "click #back-check-in": "back"
+    },
+
+    el: ".content",
+    
+    initialize: function() {
+      _.bindAll(this, "createCheckIn");
+      this.render();
+      setToToday();
+    },
+
+    createCheckIn: function(e) {
+      var self = this;
+      addPrev();      
+      this.$(".signup-form button").attr("disabled", "disabled");
+
+      return false;
+    },
+
+    back: function() {
+      new CheckInView();
+    },
+
+    render: function() {
+      this.$el.html(_.template($("#prev-checkin-template").html()));
+      this.delegateEvents();
+    }
+  });
+
+  function setToToday() {
+    var now = new Date();
+    var today = now.toISOString().substring(0, 10);
+    console.log(today);
+    document.getElementById("input-date").value = today;
+  }
+
+  function addPrev() {
+    var currentUser = Parse.User.current();
+    var dateInput = document.getElementById("input-date");
+    var dateValue = dateInput.value;
+    var timeIn = document.getElementById("input-time-in").value;
+    var timeOut = document.getElementById("input-time-out").value;
+    var date1 = new Date(dateValue + " " + timeIn);
+    var date2 = new Date(dateValue + " " + timeOut);
+    var dateString1 = date1.toLocaleString();
+    var dateString2 = date2.toLocaleString();
+    var newCheckIn = new Parse.Object("CheckIn");
+    newCheckIn.set("mentorName", currentUser.get("firstName")
+      + " " + currentUser.get("lastName"));
+    newCheckIn.set("studentName", currentUser.get("studentName"));
+    newCheckIn.set("parentName", currentUser.get("studentParentName"));
+    newCheckIn.set("timeIn", date1);
+    newCheckIn.set("stringTimeIn", dateString1);
+    newCheckIn.set("timeOut", date2);
+    newCheckIn.set("stringTimeIn", dateString2);
+    newCheckIn.save(null, {
+        success: function(newCheckIn) {
+          document.getElementById("button").disabled = true;
+          document.getElementById("check-in-saved").style.display = "inline"; 
+          console.log("successfully added checkin");
+          currentUser.set("currentCheckIn", newCheckIn.id);
+          currentUser.save();
+        },
+        error: function(newCheckIn, error) {
+          console.log(error.message);
+        }
+      });
+  }
+  
   var started = false;
   var CheckInView = Parse.View.extend({
     events: {
       "click #see-checkins": "viewCheckIns",
       "click #back-info": "backToInfo",
-      "click #back-login": "logIn",
-      "click #checkin-button": "checkIn"
+      "click #back-login": "logOut",
+      "click #checkin-button": "checkIn",
+      "click #prev-checkin": "prevCheckIn"
     },
 
     el: ".content",
@@ -302,55 +396,63 @@ $(function() {
       var self = this;
       var currentUser = Parse.User.current();
       var checked = currentUser.get("checkedIn");
+
+      if(!checked && !googleLoc()) {
+        this.$('#checkout-alert').html("Looks like you're not at PS 145. Submit a past check-in below.");
+        return;
+      }
+
       var date = new Date();
       currentUser.set("timeIn", date);
       currentUser.set("checkedIn", !checked);
       currentUser.save(null, {
-          success: function(user) {
-            if (checked) {
-              this.$('#checkin-button').html("Check In");
-            } else {
-              console.log("create");
-              //self.createNewCheckIn;
-              var newCheckIn = new Parse.Object("CheckIn");
-              newCheckIn.set("mentorName", currentUser.get("firstName") + " " + currentUser.get("lastName"));
-              newCheckIn.set("studentName", currentUser.get("studentName"));
-              newCheckIn.set("parentName", currentUser.get("studentParentName"));
-              newCheckIn.set("timeIn", currentUser.get("timeIn"));
-              var timeInString = currentUser.get("timeIn").toLocaleString();;
-              newCheckIn.set("stringTimeIn", timeInString);
-              //var testNum = 6000 * currentUser.get("lessonLength");
-              //console.log(testNum);
-              //var newDate = currentUser.get("timeIn") + 6000 * currentUser.get("lessonLength");
-              //var out = new Date(""+newDate);
-              //newCheckIn.set("timeOut", out);
-              newCheckIn.save(null, {
-                success: function(newCheckIn) {
-                  console.log("successfully added checkin");
-                },
-                error: function(newCheckIn, error) {
-                  console.log(error.message);
-                }
-              });
-              this.$('#checkin-button').html("Check Out");
-            }
-            console.log("user saved");
-            started = false;
-          },
-
-          error: function(user, error) {
-            self.$(".signup-form .error").html(_.escape(error.message)).show();
-            self.$(".signup-form button").removeAttr("disabled");
+        success: function(user) {
+          if (checked) {
+            this.$('#checkin-button').html("Check In");
+            saveTimeOut();
+          } else {
+            console.log("create");
+            var newCheckIn = new Parse.Object("CheckIn");
+            newCheckIn.set("mentorName", currentUser.get("firstName") 
+              + " " + currentUser.get("lastName"));
+            newCheckIn.set("studentName", currentUser.get("studentName"));
+            newCheckIn.set("parentName", currentUser.get("studentParentName"));
+            newCheckIn.set("timeIn", currentUser.get("timeIn"));
+            var timeInString = currentUser.get("timeIn").toLocaleString();;
+            newCheckIn.set("stringTimeIn", timeInString);
+            newCheckIn.save(null, {
+              success: function(newCheckIn) {
+                console.log("successfully added checkin");
+                currentUser.set("currentCheckIn", newCheckIn.id);
+                currentUser.save();
+              },
+              error: function(newCheckIn, error) {
+                console.log(error.message);
+              }
+            });
+            this.$('#checkin-button').html("Check Out");
           }
-        });
+          console.log("user saved");
+          started = false;
+        },
 
+        error: function(user, error) {
+          self.$(".signup-form .error").html(_.escape(error.message)).show();
+          self.$(".signup-form button").removeAttr("disabled");
+        }
+      });
+
+    },
+
+    prevCheckIn: function() {
+      new PrevCheckInView();
     },
 
     viewCheckIns: function() {
       new CheckInListView();
     },
 
-    logIn: function() {
+    logOut: function() {
       Parse.User.logOut();
       new LogInView();
     },
@@ -381,6 +483,7 @@ $(function() {
         this.$('#checkout-alert').html("We checked you out because your lesson ended.");
         currentUser.set("checkedIn", false);
         currentUser.save();
+        saveTimeOut();
         return;
       }
 
@@ -391,32 +494,32 @@ $(function() {
       }
     },
 
-    createNewCheckIn: function() {
-      console.log("hello");
-      var currentUser = Parse.User.current();
-      var newCheckIn = new Parse.Object("CheckIn");
-      newCheckIn.set("mentorName", currentUser.get("firstName") + currentUser.get("lastName"));
-      newCheckIn.set("studentName", currentUser.get("studentName"));
-      newCheckIn.set("parentName", currentUser.get("studentParentName"));
-      newCheckIn.set("timeIn", currentUser.get("timeIn"));
-      newCheckIn.set("timeOut", currentUser.get("timeIn") + 6000 * currentUser.get("lessonLength"));
-      newCheckIn.save(null, {
-        success: function(newCheckIn) {
-          console.log("successfully added checkin");
-        },
-        error: function(newCheckIn, error) {
-          console.log(error.message);
-        }
-      });
-    },
-
     render: function() {
       this.$el.html(_.template($("#checkin-template").html()));
       this.delegateEvents();
     }
   });
 
-
+  function saveTimeOut() {
+    var currentUser = Parse.User.current();
+    var query = new Parse.Query("CheckIn");
+    query.equalTo("objectId", currentUser.get("currentCheckIn"));
+    query.find({
+      success: function(results) {
+        if (results.length > 0) {
+          var item = results[0];
+          var addDate = new Date();
+          var addString = addDate.toLocaleString();
+          item.set("timeOut", addDate);
+          item.set("stringTimeOut", addString);
+          item.save();
+        }
+      },
+      error: function(error) {
+        console.log(error.message);
+      }
+    });
+  }
 
 
   // The main view for the app
@@ -432,14 +535,6 @@ $(function() {
     render: function() {
       var user = Parse.User.current();
       if (user) {
-        /*console.log(user.get("username"));
-        if (user.get("username") == null) {
-          Parse.User.logOut();
-          new LogInView();
-        } else {
-          //Parse.User.logOut();
-          new CheckInView();
-        }*/
         new CheckInView();
       } else {
         new LogInView();

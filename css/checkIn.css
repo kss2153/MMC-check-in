@@ -88,7 +88,7 @@ body {
   #todoapp h5 {
     font-style: italic;
     position: absolute;
-    top: -65px;
+    top: -70px;
     width: 100%;
     font-size: 15px;
     font-weight: bold;
@@ -120,7 +120,7 @@ body {
 @media screen and (max-width: 600px) {
   #todoapp h1 {
     position: absolute;
-    top: -95px;
+    top: -100px;
     width: 100%;
     font-size: 40px;
     font-weight: bold;
