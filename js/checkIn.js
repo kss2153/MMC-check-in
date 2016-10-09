@@ -259,6 +259,8 @@ $(function() {
         success: function(user) {
           //spinner.style.display = "none";
           navCheckIn();
+          self.undelegateEvents();
+          delete self;
         },
 
         error: function(user, error) {
@@ -351,8 +353,13 @@ $(function() {
     var dateValue = dateInput.value;
     var timeIn = document.getElementById("input-time-in").value;
     var timeOut = document.getElementById("input-time-out").value;
-    var date1 = new Date(dateValue + " " + timeIn);
-    var date2 = new Date(dateValue + " " + timeOut);
+    console.log(dateValue + " " + timeIn);
+    var s = dateValue + "-" + timeIn;
+    var a = s.split(/[^0-9]/);
+    var date1 = new Date (a[0],a[1]-1,a[2],a[3],a[4],a[5] );
+    var s2 = dateValue + "-" + timeOut;
+    var a2 = s.split(/[^0-9]/);
+    var date2 = new Date (a[0],a[1]-1,a[2],a[3],a[4],a[5] );
     var dateString1 = date1.toLocaleString();
     var dateString2 = date2.toLocaleString();
     var newCheckIn = new Parse.Object("CheckIn");
@@ -363,13 +370,14 @@ $(function() {
     newCheckIn.set("timeIn", date1);
     newCheckIn.set("stringTimeIn", dateString1);
     newCheckIn.set("timeOut", date2);
-    newCheckIn.set("stringTimeIn", dateString2);
+    newCheckIn.set("stringTimeOut", dateString2);
     newCheckIn.save(null, {
         success: function(newCheckIn) {
           //document.getElementById("button").disabled = true;
           document.getElementById("check-in-saved").style.display = "inline"; 
           console.log("successfully added checkin");
           currentUser.set("currentCheckIn", newCheckIn.id);
+          currentUser.set("timeIn", date1);
           currentUser.save();
         },
         error: function(newCheckIn, error) {
@@ -465,6 +473,12 @@ $(function() {
     },
 
     prevCheckIn: function() {
+      var currentUser = Parse.User.current();
+      if(!currentUser.get("filledInfo")) {
+        this.$('#checkout-alert').html("Input your lesson information before checking in!");
+        started = false;
+        return;
+      }
       var self = this;
       navPrev();
       //new PrevCheckInView();
