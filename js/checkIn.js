@@ -33,7 +33,9 @@ $(function() {
   // This is the transient application state, not persisted on Parse
   var AppState = Parse.Object.extend("AppState", {
     defaults: {
-      filter: "all"
+      filter: "all",
+      limit: 5,
+      page: 0
     }
   });
 
@@ -73,11 +75,16 @@ $(function() {
 
   });
 
+  var total;
   var CheckInListView = Parse.View.extend({
     el: ".content",
    
     events: {
-      "click #back-checkins": "backCheckIn"
+      "click #back-checkins": "backCheckIn",
+      "click #next-page1": "nextPage",
+      "click #next-page": "nextPage",
+      "click #prev-page1": "prevPage",
+      "click #prev-page": "prevPage"
     },
  
     initialize: function() {
@@ -89,10 +96,19 @@ $(function() {
       this.input = this.$("#new-checkin");
       this.checkins = new CheckInList;
       this.checkins.query = new Parse.Query(CheckIn);
+      this.checkins.query.limit(state.get("limit"));
+      this.checkins.query.skip(state.get("page") * state.get("limit"));
       this.checkins.query.descending("timeIn"); 
       this.checkins.bind('reset', this.addAll);
 
       this.checkins.fetch();
+
+      state.on("change", this.initialize, this);
+      var curP = state.get("page");
+      pageIndex(curP + 1);
+      //if (curP != 0 && this.checkins.size() === 0) {
+        //state.set({page: curP - 1});
+      //}
     },
 
     backCheckIn: function() {
@@ -111,9 +127,32 @@ $(function() {
     addAll: function(collection, filter) {
       this.$("#todo-list").html("");
       this.checkins.each(this.addOne);  
+    },
+
+    nextPage: function() {
+      var p = state.get("page");
+      var lim = state.get("limit");
+      var length = this.checkins.size();
+      if (length < lim) {
+        return;
+      }
+      state.set({page: p + 1});
+    },
+   
+    prevPage: function() {
+      var p = state.get("page");
+      if (p === 0) {
+        return;
+      }
+      state.set({page: p - 1});
     }
 
   });
+
+  function pageIndex(p) {
+    document.getElementById("page-number").innerHTML = p;
+    document.getElementById("page-number1").innerHTML = p;
+  }
 
 
 
@@ -356,9 +395,19 @@ $(function() {
     console.log(dateValue + " " + timeIn);
     var s = dateValue + "-" + timeIn;
     var a = s.split(/[^0-9]/);
+    for (var i = 0; i < 6; i++) {
+      if (!a[i]) { 
+        a[i] = "00"; 
+      }
+    }
     var date1 = new Date (a[0],a[1]-1,a[2],a[3],a[4],a[5] );
     var s2 = dateValue + "-" + timeOut;
     var a2 = s.split(/[^0-9]/);
+    for (var i = 0; i < 6; i++){
+      if (!a2[i]) { 
+        a2[i] = "00";
+      } 
+    }
     var date2 = new Date (a[0],a[1]-1,a[2],a[3],a[4],a[5] );
     var dateString1 = date1.toLocaleString();
     var dateString2 = date2.toLocaleString();
@@ -381,6 +430,8 @@ $(function() {
           currentUser.save();
         },
         error: function(newCheckIn, error) {
+          document.getElementById("check-in-saved").innerHTML = "error, try again.";
+          document.getElementById("check-in-saved").style.display = "inline";
           document.getElementById("button").disabled = false;
           console.log(error.message);
         }
